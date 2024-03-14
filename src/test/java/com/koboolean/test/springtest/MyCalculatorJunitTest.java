@@ -1,13 +1,14 @@
 package com.koboolean.test.springtest;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class MyCalculatorJunitTest {
 
     @Test
+    @DisplayName("더하기 테스트")
     void addTest() {
         // 다음 형식의 패턴을 AAA패턴 혹은 GWT 패턴이라고 한다.
 
@@ -22,6 +23,7 @@ class MyCalculatorJunitTest {
     }
 
     @Test
+    @DisplayName("빼기 테스트")
     void minusTest() {
 
         // given
@@ -35,6 +37,7 @@ class MyCalculatorJunitTest {
     }
 
     @Test
+    @DisplayName("곱하기 테스트")
     void multiplyTest() {
         MyCalculator myCalculator = new MyCalculator(10.0);
 
@@ -44,6 +47,7 @@ class MyCalculatorJunitTest {
     }
 
     @Test
+    @DisplayName("나누기 테스트")
     void divideTest() {
         MyCalculator myCalculator = new MyCalculator(10.0);
 
