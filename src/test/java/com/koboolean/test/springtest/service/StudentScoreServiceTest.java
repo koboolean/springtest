@@ -3,11 +3,14 @@ package com.koboolean.test.springtest.service;
 import com.koboolean.test.springtest.MyCalculator;
 import com.koboolean.test.springtest.model.StudentPass;
 import com.koboolean.test.springtest.model.StudentScore;
+import com.koboolean.test.springtest.model.StudentScoreFixture;
+import com.koboolean.test.springtest.model.StudentScoreTestDataBuilder;
 import com.koboolean.test.springtest.repository.StudentFailRepository;
 import com.koboolean.test.springtest.repository.StudentPassRepository;
 import com.koboolean.test.springtest.repository.StudentScoreRepository;
 import com.koboolean.test.springtest.web.response.ExamPassStudentResponse;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,15 +21,24 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StudentScoreServiceTest {
+    private StudentScoreRepository studentScoreRepository;
+    private StudentPassRepository studentPassRepository;
+    private StudentFailRepository studentFailRepository;
+    private StudentScoreService studentScoreService;
+
+    @BeforeEach
+    public void beforeEach(){
+        studentScoreRepository = Mockito.mock(StudentScoreRepository.class);
+        studentPassRepository = Mockito.mock(StudentPassRepository.class);
+        studentFailRepository = Mockito.mock(StudentFailRepository.class);
+
+        studentScoreService = new StudentScoreService(
+                studentScoreRepository, studentPassRepository, studentFailRepository
+        );
+    }
 
     @Test
     public void firstSaveScoreMockTest(){
-        StudentScoreService studentScoreService = new StudentScoreService(
-                Mockito.mock(StudentScoreRepository.class),
-                Mockito.mock(StudentPassRepository.class),
-                Mockito.mock(StudentFailRepository.class)
-        );
-
         String givenStudentName = "koboolean";
         String givenExam = "testExam";
 
@@ -46,37 +58,34 @@ class StudentScoreServiceTest {
     @Test
     @DisplayName("성적 저장 로직 검증")
     public void saveScoreMockTest(){
-        StudentScoreRepository studentScoreRepository = Mockito.mock(StudentScoreRepository.class);
-        StudentPassRepository studentPassRepository = Mockito.mock(StudentPassRepository.class);
-        StudentFailRepository studentFailRepository = Mockito.mock(StudentFailRepository.class);
-
-        StudentScoreService service = new StudentScoreService(
-                studentScoreRepository, studentPassRepository, studentFailRepository
-        );
-
+        /*
         String givenStudentName = "koboolean";
         String givenExam = "testExam";
 
         Integer korScr = 80;
         Integer engScr = 70;
         Integer mathScr = 60;
+        */
+
+        StudentScore studentScore = StudentScoreTestDataBuilder.passed().build();
+        StudentScore fixtureStudentScore = StudentScoreFixture.passed();
 
         StudentScore expectStudentScore = StudentScore.builder()
-                .studentName(givenStudentName)
-                .exam(givenExam)
-                .korScore(korScr)
-                .englishScore(engScr)
-                .mathScroe(mathScr)
+                .studentName(studentScore.getStudentName())
+                .exam(studentScore.getExam())
+                .korScore(studentScore.getKorScore())
+                .englishScore(studentScore.getEnglishScore())
+                .mathScroe(studentScore.getMathScroe())
                 .build();
 
         StudentPass expectStudentPass = StudentPass.builder()
-                .studentName(givenStudentName)
-                .exam(givenExam)
+                .studentName(fixtureStudentScore.getStudentName())
+                .exam(fixtureStudentScore.getExam())
                 .avgScore(
                         (new MyCalculator()
-                                .add(korScr.doubleValue())
-                                .add(engScr.doubleValue())
-                                .add(mathScr.doubleValue())
+                                .add(fixtureStudentScore.getKorScore().doubleValue())
+                                .add(fixtureStudentScore.getEnglishScore().doubleValue())
+                                .add(fixtureStudentScore.getMathScroe().doubleValue())
                                 .divide(3.0)
                                 .getResult())
                 ).build();
@@ -84,12 +93,12 @@ class StudentScoreServiceTest {
         ArgumentCaptor<StudentScore>  studentScoreArgumentCaptor = ArgumentCaptor.forClass(StudentScore.class);
         ArgumentCaptor<StudentPass>  studentPassArgumentCaptor = ArgumentCaptor.forClass(StudentPass.class);
 
-        service.saveScore(
-                givenStudentName,
-                givenExam,
-                korScr,
-                engScr,
-                mathScr
+        studentScoreService.saveScore(
+                studentScore.getStudentName(),
+                studentScore.getExam(),
+                studentScore.getKorScore(),
+                studentScore.getEnglishScore(),
+                studentScore.getMathScroe()
         );
 
         // 60점 이상일 경우 Fail은 일어나지 않고, Score 및 Pass는 실행되어야 한다.
@@ -101,10 +110,6 @@ class StudentScoreServiceTest {
     @Test
     @DisplayName("합격자 명단 가져오기 검증")
     public void getPassListTest(){
-        StudentScoreRepository studentScoreRepository = Mockito.mock(StudentScoreRepository.class);
-        StudentPassRepository studentPassRepository = Mockito.mock(StudentPassRepository.class);
-        StudentFailRepository studentFailRepository = Mockito.mock(StudentFailRepository.class);
-
         String testExam = "testExam";
 
         StudentPass pass1 = StudentPass.builder().studentPassId(1L).studentName("koboolean").exam(testExam).avgScore(70.0).build();
@@ -116,17 +121,13 @@ class StudentScoreServiceTest {
                 pass1, pass2, pass3
         ));
 
-        StudentScoreService service = new StudentScoreService(
-                studentScoreRepository, studentPassRepository, studentFailRepository
-        );
-
         // when
         var expectResponse = List.of(pass1, pass2)
                 .stream()
                 .map((pass) -> new ExamPassStudentResponse(pass.getStudentName(), pass.getAvgScore()))
                 .toList();
 
-        List<ExamPassStudentResponse> responses = service.getPassStudentList("testExam");
+        List<ExamPassStudentResponse> responses = studentScoreService.getPassStudentList("testExam");
 
         // 같은 값이 나오는지 검증
         Assertions.assertEquals(expectResponse, responses);
