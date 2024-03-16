@@ -1,6 +1,8 @@
 package com.koboolean.test.springtest.service;
 
+import com.koboolean.test.springtest.MyCalculator;
 import com.koboolean.test.springtest.model.StudentPass;
+import com.koboolean.test.springtest.model.StudentScore;
 import com.koboolean.test.springtest.repository.StudentFailRepository;
 import com.koboolean.test.springtest.repository.StudentPassRepository;
 import com.koboolean.test.springtest.repository.StudentScoreRepository;
@@ -8,6 +10,7 @@ import com.koboolean.test.springtest.web.response.ExamPassStudentResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.List;
@@ -58,6 +61,29 @@ class StudentScoreServiceTest {
         Integer engScr = 70;
         Integer mathScr = 60;
 
+        StudentScore expectStudentScore = StudentScore.builder()
+                .studentName(givenStudentName)
+                .exam(givenExam)
+                .korScore(korScr)
+                .englishScore(engScr)
+                .mathScroe(mathScr)
+                .build();
+
+        StudentPass expectStudentPass = StudentPass.builder()
+                .studentName(givenStudentName)
+                .exam(givenExam)
+                .avgScore(
+                        (new MyCalculator()
+                                .add(korScr.doubleValue())
+                                .add(engScr.doubleValue())
+                                .add(mathScr.doubleValue())
+                                .divide(3.0)
+                                .getResult())
+                ).build();
+
+        ArgumentCaptor<StudentScore>  studentScoreArgumentCaptor = ArgumentCaptor.forClass(StudentScore.class);
+        ArgumentCaptor<StudentPass>  studentPassArgumentCaptor = ArgumentCaptor.forClass(StudentPass.class);
+
         service.saveScore(
                 givenStudentName,
                 givenExam,
@@ -67,8 +93,8 @@ class StudentScoreServiceTest {
         );
 
         // 60점 이상일 경우 Fail은 일어나지 않고, Score 및 Pass는 실행되어야 한다.
-        Mockito.verify(studentScoreRepository, Mockito.times(1)).save(Mockito.any());
-        Mockito.verify(studentPassRepository, Mockito.times(1)).save(Mockito.any());
+        Mockito.verify(studentScoreRepository, Mockito.times(1)).save(studentScoreArgumentCaptor.capture());
+        Mockito.verify(studentPassRepository, Mockito.times(1)).save(studentPassArgumentCaptor.capture());
         Mockito.verify(studentFailRepository, Mockito.times(0)).save(Mockito.any());
     }
 
